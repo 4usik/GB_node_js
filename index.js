@@ -1,50 +1,47 @@
-const colors = require("colors/safe");
+const EventEmitter = require('events');
+class Emitter extends EventEmitter {
+    timer = (args) => {
+        const {time, id} = args;
+        this.emit('timer', {time, id});
+    }
+};
 
-const arr = [];
+const emitter = new Emitter;
 
-if ((+process.argv[3] % 1) !== 0 || (+process.argv[2] % 1) !== 0) {
-    console.log('Error');
-} else {
-    if (+process.argv[3] >= +process.argv[2]) {
-        nextPrime:
-        for (let i = +process.argv[2]; i <= process.argv[3]; i++) {
+emitter.on('timer', (args) => {
+    const {time, id} = args;
+    const total = toSec(time);
+    timer(total, id);
+});
 
-            for (let j = 2; j < i ; j++) {
-                if (i % j === 0) continue nextPrime;
-            }
-            arr.push(i);
+// функция для перевода аргументов в секунды
+const toSec = (arg) => {
+    const arr = arg.split("-");
+    const hours = +arr[0] || 0;
+    const days = +arr[1] || 0;
+    const months = +arr[2] || 0;
+    const years = +arr[3] || 0;
+    const total = 60 * 60 * (hours + 24 * (days + 30 * (months + years * 12)));
+
+    return total;
+};
+
+// создание таймера
+const timer = (total, i) => {
+    let t = total;
+    const timeInterval = setInterval(() => {
+        if (t > 0) {
+            t--;
+            console.log(`timer ${i-2} is ${t}`);
+        } else {
+            console.log(`timer ${i-2} is out`);
+            clearInterval(timeInterval);
         }
-    } else {
-        nextPrime:
-        for (let i = +process.argv[3]; i <= process.argv[2]; i++) {
+    }, 1000);
+};
 
-            for (let j = 2; j < i ; j++) {
-                if (i % j === 0) continue nextPrime;
-            }
-            arr.push(i);
-        }
-    };
-
-    switch (arr.length) {
-        case 0:
-            console.log(colors.red('В указанном диапазоне нет простых чисел'))
-            break;
-        case 1:
-            console.log(colors.green(arr[0]));
-            break;
-        case 2:
-            console.log(colors.green(arr[0]));
-            console.log(colors.yellow(arr[1]));
-            break;
-        default:
-            console.log(colors.green(arr[0]));
-            console.log(colors.yellow(arr[1]));
-            console.log(colors.red(arr[2]));
-            break;
-    };
-
+if (process.argv.length > 2) { 
+    for (let i = 3; i <= process.argv.length; i++) {
+        emitter.timer({time: process.argv[i-1], id: i});
+    }
 }
-
-
-
-
