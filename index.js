@@ -1,126 +1,122 @@
-<<<<<<< HEAD
-const fs = require('fs');
+#!/usr/bin/env node
 
-const readStream = fs.createReadStream('./log.txt', 'utf-8');
+const fs = require("fs");
+const inquirer = require('inquirer');
+const path = require("path");
+const readline = require("readline");
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
 const ip1 = '89.123.1.41';
 const ip2 = '34.48.240.111';
 
-const writeStreamCreater = (ip, newText) => {
-    const writeStream = fs.createWriteStream(`./%${ip}%_requests.log`,  { flags: 'a', encoding: 'utf8' });
-    writeStream.write(newText);
-}
+// функция для проверки является ли аргумент файлом
+const isFile = fileName => {
+    return fs.lstatSync(fileName).isFile();
+};
 
-const findLog = (ip, chunk) => { 
-    if (chunk.search(ip) > -1) {
-        let idx = chunk.indexOf(ip);
+// получаем путь к директории, из которой запущена программа
+const currentDirectory = process.cwd();
+
+// функция для поиска строки в файле
+const findLog = (term, chunk) => {
+
+    if (chunk.search(term) > -1) {
+        let idx = chunk.indexOf(term);
         let arrIp = [];
         while (idx != -1) {
             arrIp.push(idx);
-            idx = chunk.indexOf(ip, idx + 1);
+            idx = chunk.indexOf(term, idx + 1);
         };
 
         for (let i = 0; i < arrIp.length; i++) {
             text = chunk.slice(arrIp[i]);
             const newText = text.slice(0, text.search(/\n/));
-            writeStreamCreater(ip, '\n');
-            writeStreamCreater(ip, newText);
+            writeStreamCreater(term, '\n');
+            writeStreamCreater(term, newText);
         };
+    } else {
+        console.log('The term not found in choosed file');
+        createReadStream('plug');
     };
- }
+};
 
-readStream.on('data', (chunk) => {
-    findLog(ip1, chunk);
-    findLog(ip2, chunk);
-});
+// функция для создания отдельных файлов с логами по term
+const writeStreamCreater = (term, newText) => {
+    const writeStream = fs.createWriteStream(`./%${term}%_requests.log`,  { flags: 'a', encoding: 'utf8' });
+    writeStream.write(newText);
+};
 
-readStream.on('end', () => console.log('File reading finished'));
-readStream.on('error', () => console.log(err));
+// функция для создания потка для чтения
+const createReadStream = (fileName, term) => {
+    // создаем поток
+    const readStream = fs.createReadStream(fileName, 'utf-8');
 
-
-=======
-const EventEmitter = require('events');
-class Emitter extends EventEmitter {
-    timer = (args) => {
-        const {date, id} = args;
-        this.emit('timer', {date, id});
+    // получаем и обрабатываем chunk'и
+    if (term) {
+        readStream.on('data', (chunk) => {
+            findLog(term, chunk);
+        });
     }
-};
 
-const emitter = new Emitter;
-
-emitter.on('timer', (args) => {
-    const {date, id} = args;
-    timer(date, id);
-});
-
-// форматируем введенную дату
-const formatDate= (date) => {
-    const arr = date.split("-");
-    const hours = arr[0];
-    const days = arr[1];
-    const months = arr[2];
-    const years = arr[3];
-    const newDate = `${years}-${months}-${days}T${hours}:00:00.000Z`;
-    return newDate;
-};
-
-// вычисление остатка времени
-function getTimeRemaining(endTime) {
-    let days, hours, minutes, seconds;
+    readStream.on('end', () => {
+        console.log('File reading finished');
+        process.exit(0);
+    });
+    readStream.on('error', () => {
+        console.log('err');
+        process.exit(1);
+    });
     
-    const t = Date.parse(formatDate(endTime)) - Date.parse(new Date());
-
-    if (t <= 0) {
-        days = 0;
-        hours = 0;
-        minutes = 0;
-        seconds = 0;
-    } else {
-        days = Math.floor(t/(1000 * 60 * 60 * 24)),
-        hours = Math.floor((t/(1000 * 60 * 60)) % 24),
-        minutes = Math.floor((t/(1000 * 60)) % 60),
-        seconds = Math.floor((t/1000) % 60);
-    }
-
-    return {
-        'total': t,
-        'days': days,
-        'hours': hours,
-        'minutes': minutes,
-        'seconds': seconds
-    };
 };
 
-// создание таймера
-const timer = (date, i) => {
+// функция для просмотра и выбора содержимого директории
+const createInq = (currentDirectory, term) => {
+    // получаем содержимое директории
+    const list = fs.readdirSync(currentDirectory);
+ 
+    inquirer
+        .prompt([{
+            name: "fileName",
+            type: "list",
+            message: "Choose file:",
+            choices: list,
+            }])
+        .then((answer) => {
+            // получаем полный путь к файлу
+            const newPath = path.join(currentDirectory, answer.fileName);
 
-    const timeInterval = setInterval(() => {
-        const {total, days, hours, minutes, seconds} = getTimeRemaining(date);
+            // читаем, если файл - строим список, если директория
+            isFile(newPath) ? createReadStream(newPath, term) : createInq(newPath, term);
+        });
 
-        console.log(`timer ${i-2}: is ${getZero(days)} days: ${getZero(hours)}:${getZero(minutes)}:${getZero(seconds)}`);
-
-        if (total <= 0) {
-            console.log(`timer ${i-2} is out`);
-            clearInterval(timeInterval);
-        }
-    }, 1000);
 };
 
-// добавляем 0
-function getZero(num) {
-    if (num >= 0 && num < 10) {
-        return `0${num}`;
-    } else {
-        return num;
-    }
-}
+console.log('currentDirectory', currentDirectory);
 
-if (process.argv.length > 2) { 
-    for (let i = 3; i <= process.argv.length; i++) {
-        emitter.timer({date: process.argv[i-1], id: i});
-    }
-} else {
-    console.log('No date');
-}
->>>>>>> main
+rl.question("Please enter the path to the file or press enter, if the current dir contain the file: ",
+    function(inputedPath = currentDirectory) {
+
+    rl.question("Please enter the term for search: ", function(inputedTerm) {
+
+        if (!inputedTerm) {
+            console.log('The term is null');
+            process.exit(1);
+        };
+
+        if (inputedPath) {
+            createInq(inputedPath, inputedTerm);
+        } else {
+            createInq(currentDirectory, inputedTerm);
+        };
+
+    });    
+});
+
+rl.on("close", function() {
+    process.exit(0);
+});
+
