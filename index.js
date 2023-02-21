@@ -14,35 +14,31 @@ const isFile = fileName => {
 
 // функция для рендеринга разметки
 const createList = (directory) => {
-    // получаем содержимое директории
-    const list = fs.readdirSync(directory);
 
-    const ul = list.map(el => {
-        // let li;
-        // if (!isFile(el)) {
-        //     li = `<li><a href="${el}">${el}</a></li>`
-        // } else {
-        //     li = `<li>${el}</li>`
-        // };
-        return `<li><a href="${el}">${el}</a></li>`;
-    });
-    return ul;
-    
+    const list = fs.readdirSync(directory);
+    const ul = list.map(el => `<li><a href="${el}">${el}</a></li>`);
+    return ul.join('');  
 };
 
 // создаем http-сервер
 const server = http.createServer((req, res) => {
     const newPath = path.join(currentDirectory, req.url);
-    const list = createList(currentDirectory).join('');
 
     res.setHeader('Content-Type', 'text/html');
-    res.write(`<h3>Current directory:`);
-    res.write(`<h3>${newPath}</h3>`);
-    res.write(`<ul>${list}<li><a href="#">Back</a></li></ul>`);
-    res.end();
+    
+    text = isFile(newPath) ?
+    (fs.readFileSync(`${newPath}`, "utf8"))
+    :
+    (`<ul>${createList(newPath)}<li><a href="#">Back</a></li></ul>`);
+
+    res.end(text);
     
 });
 
+// слушаем сервер
 server.listen(3002, 'localhost', error => {
     error ? console.log(error) : console.log('Listening');
 });
+
+
+
