@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// !!! при запуске в chrome обязательно блокируем в network запрос к favicon.ico
+
 const fs = require("fs");
 const http = require('http');
 const path = require("path");
